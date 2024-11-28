@@ -25,6 +25,12 @@ end
 # Helper method to edit a workout day
 def edit_day(data)
   display_split(data)
+
+  # if the user does not have any days added do not allow them to edit anything
+  if data[:split_days].empty?
+    return
+  end
+
   puts "\nSelect a day to edit (number) or type 'exit' to cancel:"
   input = gets.chomp
   return if input.downcase == "exit"
