@@ -108,12 +108,32 @@ def edit_exercises(day)
   end
 end
 
+# Ensure user name is set
+def ensure_user_name(data)
+  if data[:name].nil? || data[:name].strip.empty?
+    puts "No user data found! Let's set up your workout tracker."
+    puts "Enter your name:"
+    user_name = gets.chomp.strip
+    until !user_name.empty?
+      puts "Name cannot be empty. Please enter your name:"
+      user_name = gets.chomp.strip
+    end
+    data[:name] = user_name
+    StorageHelper.save_data(data)
+    puts "Profile created successfully for #{user_name}!"
+  else
+    puts "Welcome back, #{data[:name]}!"
+  end
+end
+
 # Main entry point
 def main
   puts "Welcome to the Workout Tracker!"
 
   # Load data from the file
   data = StorageHelper.load_data
+
+  ensure_user_name(data)
 
   loop do
     puts "\nMain Menu:"
