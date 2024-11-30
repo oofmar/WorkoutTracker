@@ -1,4 +1,14 @@
 {
-  "name": "",
-  "split_days": []
+  "name": "Omar",
+  "split_days": [
+    {
+      "day_name": "Monday",
+      "exercises": [
+        {
+          "name": "Hack Squat",
+          "weight": 35
+        }
+      ]
+    }
+  ]
 }

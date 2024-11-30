@@ -15,8 +15,12 @@ def display_split(data)
   else
     data[:split_days].each_with_index do |day, index|
       puts "#{index + 1}. #{day[:day_name]}"
-      day[:exercises].each_with_index do |exercise, ex_index|
-        puts "   #{ex_index + 1}. #{exercise[:name]} - #{exercise[:weight]} lbs"
+      if day[:exercises].empty?
+        puts "No exercises found."
+      else
+        day[:exercises].each_with_index do |exercise, ex_index|
+          puts "   #{ex_index + 1}. #{exercise[:name]} - #{exercise[:weight]} lbs"
+        end
       end
     end
   end
@@ -69,8 +73,12 @@ end
 # Helper method to edit exercises within a day
 def edit_exercises(day)
   puts "\nEditing Exercises in #{day[:day_name]}"
-  day[:exercises].each_with_index do |exercise, index|
-    puts "#{index + 1}. #{exercise[:name]} - #{exercise[:weight]} lbs"
+  if day[:exercises].empty?
+    puts "No exercises found. Please add one."
+  else
+    day[:exercises].each_with_index do |exercise, index|
+      puts "#{index + 1}. #{exercise[:name]} - #{exercise[:weight]} lbs"
+      end
   end
   puts "1. Add Exercise"
   puts "2. Edit Existing Exercise"
@@ -79,40 +87,16 @@ def edit_exercises(day)
 
   case choice
   when 1
-    puts "Enter exercise name:"
-    name = gets.chomp
-    puts "Enter weight:"
-    weight = gets.chomp.to_i
-    day[:exercises] << { name: name, weight: weight }
-    puts "Exercise '#{name}' added with #{weight} lbs."
+    add_exercise(day)
   when 2
-    puts "Select an exercise to edit (number):"
-    ex_index = gets.chomp.to_i - 1
-    if ex_index < 0 || ex_index >= day[:exercises].length
-      puts "Invalid selection."
-      return
-    end
-    puts "Editing #{day[:exercises][ex_index][:name]}"
-    puts "Enter new name (leave blank to keep current):"
-    new_name = gets.chomp
-    puts "Enter new weight (leave blank to keep current):"
-    new_weight = gets.chomp
-    day[:exercises][ex_index][:name] = new_name unless new_name.empty?
-    day[:exercises][ex_index][:weight] = new_weight.to_i unless new_weight.empty?
-    puts "Exercise updated."
+    edit_exercise_exists(day)
   when 3
-    puts "Select an exercise to delete (number):"
-    ex_index = gets.chomp.to_i - 1
-    if ex_index < 0 || ex_index >= day[:exercises].length
-      puts "Invalid selection."
-      return
-    end
-    deleted_exercise = day[:exercises].delete_at(ex_index)
-    puts "Deleted exercise '#{deleted_exercise[:name]}'."
+    delete_exercise(day)
   else
-    puts "Invalid choice."
+    puts "Invalid selection. Try again."
   end
 end
+
 
 # Ensure user name is set
 def ensure_user_name(data)
@@ -131,6 +115,55 @@ def ensure_user_name(data)
     puts "Welcome back, #{data[:name]}!"
   end
 end
+
+def add_exercise(day)
+  puts "Enter exercise name:"
+  name = gets.chomp
+  puts "Enter weight:"
+  weight = gets.chomp.to_i
+  day[:exercises] << { name: name, weight: weight }
+  puts "Exercise '#{name}' added with #{weight} lbs."
+end
+
+def edit_exercise_exists(day)
+  puts "Select an exercise to edit (number):"
+  day[:exercises].each_with_index do |exercise, index|
+    puts "#{index + 1}. #{exercise[:name]} - #{exercise[:weight]} lbs"
+  end
+
+  ex_index = gets.chomp.to_i - 1
+  if ex_index < 0 || ex_index >= day[:exercises].length
+    puts "Invalid selection."
+    return
+  end
+
+  puts "Editing #{day[:exercises][ex_index][:name]}"
+  puts "Enter new name (leave blank to keep current):"
+  new_name = gets.chomp
+  puts "Enter new weight (leave blank to keep current):"
+  new_weight = gets.chomp
+
+  day[:exercises][ex_index][:name] = new_name unless new_name.empty?
+  day[:exercises][ex_index][:weight] = new_weight.to_i unless new_weight.empty?
+  puts "Exercise updated."
+end
+
+def delete_exercise(day)
+  puts "Select an exercise to delete (number):"
+  day[:exercises].each_with_index do |exercise, index|
+    puts "#{index + 1}. #{exercise[:name]} - #{exercise[:weight]} lbs"
+  end
+
+  ex_index = gets.chomp.to_i - 1
+  if ex_index < 0 || ex_index >= day[:exercises].length
+    puts "Invalid selection."
+    return
+  end
+
+  deleted_exercise = day[:exercises].delete_at(ex_index)
+  puts "Deleted exercise '#{deleted_exercise[:name]}'."
+end
+
 
 # Main entry point
 def main
