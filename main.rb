@@ -1,34 +1,211 @@
-# main.rb
+# Load necessary files
+puts "Loading necessary files..."
+require_relative './lib/helpers/storage_helper'
+require_relative './lib/models/user'
+require_relative './lib/models/workout_day'
+require_relative './lib/models/exercise'
 
-# requires the class files to be used in main
-require_relative 'lib/exercise'
-require_relative 'lib/workout_day'
-require_relative 'lib/workout_tracker'
+puts "Files loaded successfully!"
 
-# create instances of exercises provided
-bench_press = Exercise.new('Bench Press', '135 lbs')
-hack_squat = Exercise.new('Hack Squat', '45 lbs')
-
-# create instances of the workout day
-day1 = WorkoutDay.new(1)
-day2 = WorkoutDay.new(2)
-
-# exercises are added to specified workout days
-day1.add_exercise(bench_press)
-day2.add_exercise(hack_squat)
-
-# workout tracker instance is created
-tracker = WorkoutTracker.new
-
-# add days you worked out to the tracker
-tracker.add_day(day1)
-tracker.add_day(day2)
-
-# displays the workouts that have been added
-tracker.days.each do |day_number, workout_day| # day_number = key, workout_day = object of exercises
-  puts "Day #{day_number} Exercises:"
-  workout_day.exercises.each do |exercise|
-    puts "- #{exercise.name}: #{exercise.weight}" # iterates and prints each exercise done that day one at a time
+# Helper method to display the user's workout split
+def display_split(data)
+  puts "\nYour Current Workout Split:"
+  if data[:split_days].empty?
+    puts "No workout days found."
+  else
+    data[:split_days].each_with_index do |day, index|
+      puts "#{index + 1}. #{day[:day_name]}"
+      if day[:exercises].empty?
+        puts "No exercises found."
+      else
+        day[:exercises].each_with_index do |exercise, ex_index|
+          puts "   #{ex_index + 1}. #{exercise[:name]} - #{exercise[:weight]} lbs"
+        end
+      end
+    end
   end
-  puts
+end
+
+# Helper method to edit a workout day
+def edit_day(data)
+  display_split(data)
+
+  # if the user does not have any days added do not allow them to edit anything
+  if data[:split_days].empty?
+    return
+  end
+
+  puts "\nSelect a day to edit (number) or type 'exit' to cancel:"
+  input = gets.chomp
+  return if input.downcase == "exit"
+
+  day_index = input.to_i - 1
+  if day_index < 0 || day_index >= data[:split_days].length
+    puts "Invalid selection. Returning to menu."
+    return
+  end
+
+  day = data[:split_days][day_index]
+  puts "Editing #{day[:day_name]}"
+  puts "1. Rename Day"
+  puts "2. Edit Exercises"
+  puts "3. Delete Day"
+  choice = gets.chomp.to_i
+
+  case choice
+  when 1
+    puts "Enter new name for the day:"
+    new_name = gets.chomp
+    day[:day_name] = new_name
+    puts "Day renamed to '#{new_name}'."
+  when 2
+    edit_exercises(day)
+  when 3
+    data[:split_days].delete_at(day_index)
+    puts "Day '#{day[:day_name]}' deleted."
+  else
+    puts "Invalid choice."
+  end
+
+  StorageHelper.save_data(data)
+end
+
+# Helper method to edit exercises within a day
+def edit_exercises(day)
+  puts "\nEditing Exercises in #{day[:day_name]}"
+  if day[:exercises].empty?
+    puts "No exercises found. Please add one."
+  else
+    day[:exercises].each_with_index do |exercise, index|
+      puts "#{index + 1}. #{exercise[:name]} - #{exercise[:weight]} lbs"
+      end
+  end
+  puts "1. Add Exercise"
+  puts "2. Edit Existing Exercise"
+  puts "3. Delete Exercise"
+  choice = gets.chomp.to_i
+
+  case choice
+  when 1
+    add_exercise(day)
+  when 2
+    edit_exercise_exists(day)
+  when 3
+    delete_exercise(day)
+  else
+    puts "Invalid selection. Try again."
+  end
+end
+
+
+# Ensure user name is set
+def ensure_user_name(data)
+  if data[:name].nil? || data[:name].strip.empty?
+    puts "No user data found! Let's set up your workout tracker."
+    puts "Enter your name:"
+    user_name = gets.chomp.strip
+    until !user_name.empty?
+      puts "Name cannot be empty. Please enter your name:"
+      user_name = gets.chomp.strip
+    end
+    data[:name] = user_name
+    StorageHelper.save_data(data)
+    puts "Profile created successfully for #{user_name}!"
+  else
+    puts "Welcome back, #{data[:name]}!"
+  end
+end
+
+def add_exercise(day)
+  puts "Enter exercise name:"
+  name = gets.chomp
+  puts "Enter weight:"
+  weight = gets.chomp.to_i
+  day[:exercises] << { name: name, weight: weight }
+  puts "Exercise '#{name}' added with #{weight} lbs."
+end
+
+def edit_exercise_exists(day)
+  puts "Select an exercise to edit (number):"
+  day[:exercises].each_with_index do |exercise, index|
+    puts "#{index + 1}. #{exercise[:name]} - #{exercise[:weight]} lbs"
+  end
+
+  ex_index = gets.chomp.to_i - 1
+  if ex_index < 0 || ex_index >= day[:exercises].length
+    puts "Invalid selection."
+    return
+  end
+
+  puts "Editing #{day[:exercises][ex_index][:name]}"
+  puts "Enter new name (leave blank to keep current):"
+  new_name = gets.chomp
+  puts "Enter new weight (leave blank to keep current):"
+  new_weight = gets.chomp
+
+  day[:exercises][ex_index][:name] = new_name unless new_name.empty?
+  day[:exercises][ex_index][:weight] = new_weight.to_i unless new_weight.empty?
+  puts "Exercise updated."
+end
+
+def delete_exercise(day)
+  puts "Select an exercise to delete (number):"
+  day[:exercises].each_with_index do |exercise, index|
+    puts "#{index + 1}. #{exercise[:name]} - #{exercise[:weight]} lbs"
+  end
+
+  ex_index = gets.chomp.to_i - 1
+  if ex_index < 0 || ex_index >= day[:exercises].length
+    puts "Invalid selection."
+    return
+  end
+
+  deleted_exercise = day[:exercises].delete_at(ex_index)
+  puts "Deleted exercise '#{deleted_exercise[:name]}'."
+end
+
+
+# Main entry point
+def main
+  puts "Welcome to the Workout Tracker!"
+
+  # Load data from the file
+  data = StorageHelper.load_data
+
+  ensure_user_name(data)
+
+  loop do
+    puts "\nMain Menu:"
+    puts "1. View Workout Split"
+    puts "2. Add Workout Day"
+    puts "3. Edit Workout Day"
+    puts "4. Exit"
+    input = gets.chomp.to_i
+
+    case input
+    when 1
+      display_split(data)
+    when 2
+      puts "Enter name for the new workout day:"
+      day_name = gets.chomp
+      data[:split_days] << { day_name: day_name, exercises: [] }
+      puts "Added new workout day: '#{day_name}'."
+      StorageHelper.save_data(data)
+    when 3
+      edit_day(data)
+    when 4
+      puts "Exiting Workout Tracker. Goodbye!"
+      break
+    else
+      puts "Invalid choice. Please try again."
+    end
+  end
+end
+
+# Run the program
+begin
+  main
+rescue => e
+  puts "An error occurred: #{e.message}"
+  puts e.backtrace
 end
